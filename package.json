@@ -1,0 +1,23 @@
+{
+  "name": "carlink24-scraper",
+  "version": "1.0.0",
+  "description": "Vehicle listing scraper for CarLink24 - syncs from mobile.de to Supabase",
+  "type": "module",
+  "scripts": {
+    "sync": "node src/sync-vehicles.js",
+    "test": "echo \"No tests configured yet\""
+  },
+  "keywords": [
+    "scraper",
+    "mobile.de",
+    "carlink24",
+    "vehicles"
+  ],
+  "author": "CarLink24",
+  "license": "PRIVATE",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "puppeteer": "^22.0.0",
+    "sharp": "^0.33.0"
+  }
+}

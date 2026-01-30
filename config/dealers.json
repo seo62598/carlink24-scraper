@@ -1,0 +1,19 @@
+{
+  "dealers": [
+    {
+      "name": "Dealer 13266123",
+      "url": "https://home.mobile.de/home/index.html?customerId=13266123"
+    },
+    {
+      "name": "Dealer 16030616",
+      "url": "https://home.mobile.de/home/index.html?customerId=16030616"
+    }
+  ],
+  "settings": {
+    "maxListingsPerDealer": 100,
+    "maxTotalListings": 200,
+    "imageWidth": 1200,
+    "imageHeight": 800,
+    "enabled": true
+  }
+}
