@@ -1,0 +1,49 @@
+name: Sync Vehicles from Mobile.de
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  
+  workflow_dispatch:
+    inputs:
+      max_listings:
+        description: 'Maximum listings to process (0 = use config default)'
+        required: false
+        default: '0'
+        type: string
+
+jobs:
+  sync:
+    name: Sync Vehicle Listings
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Install Puppeteer browsers
+        run: npx puppeteer browsers install chrome
+      
+      - name: Run vehicle sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MAX_LISTINGS_OVERRIDE: ${{ github.event.inputs.max_listings }}
+        run: node src/sync-vehicles.js
+      
+      - name: Upload sync log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-log-${{ github.run_number }}
+          path: sync-log.json
+          retention-days: 30
