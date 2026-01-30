@@ -325,6 +325,12 @@ async function scrapeDealer(browser, dealerUrl, config, existingFingerprints) {
   const listings = [];
   
   try {
+    // Set a realistic user agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    // Set viewport
+    await page.setViewport({ width: 1920, height: 1080 });
+    
     // Convert home.mobile.de URL to search URL
     let searchUrl = dealerUrl;
     const customerIdMatch = dealerUrl.match(/customerId=(\d+)/);
@@ -334,7 +340,70 @@ async function scrapeDealer(browser, dealerUrl, config, existingFingerprints) {
     
     log(`Navigating to: ${searchUrl}`);
     await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-    await delay(3000);
+    await delay(2000);
+    
+    // Handle cookie consent popup
+    try {
+      const cookieSelectors = [
+        'button[data-testid="uc-accept-all-button"]',
+        '#uc-btn-accept-banner',
+        'button.mde-consent-accept-btn',
+        '[data-cookiefirst-action="accept"]',
+        'button:has-text("Alle akzeptieren")',
+        'button:has-text("Accept All")',
+        'button:has-text("Akzeptieren")',
+        '.sp_choice_type_11', // SourcePoint accept button
+        '#onetrust-accept-btn-handler'
+      ];
+      
+      for (const selector of cookieSelectors) {
+        try {
+          const button = await page.$(selector);
+          if (button) {
+            log(`Found cookie button: ${selector}`);
+            await button.click();
+            await delay(2000);
+            break;
+          }
+        } catch (e) {
+          // Continue trying other selectors
+        }
+      }
+      
+      // Also try clicking by text content
+      await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button, a'));
+        for (const btn of buttons) {
+          const text = btn.textContent?.toLowerCase() || '';
+          if (text.includes('alle akzeptieren') || text.includes('accept all') || text.includes('akzeptieren')) {
+            btn.click();
+            return true;
+          }
+        }
+        return false;
+      });
+      
+      await delay(2000);
+    } catch (e) {
+      log(`Cookie handling note: ${e.message}`, 'info');
+    }
+    
+    // Take debug screenshot
+    const debugDir = path.join(ROOT_DIR, 'debug');
+    await fs.mkdir(debugDir, { recursive: true });
+    const screenshotPath = path.join(debugDir, `dealer-${customerIdMatch?.[1] || 'unknown'}.png`);
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    log(`Debug screenshot saved: ${screenshotPath}`);
+    
+    // Log the page title and URL
+    const pageTitle = await page.title();
+    const currentUrl = page.url();
+    log(`Page title: ${pageTitle}`);
+    log(`Current URL: ${currentUrl}`);
+    
+    // Log some HTML to debug
+    const bodyHTML = await page.evaluate(() => document.body.innerHTML.substring(0, 1000));
+    log(`Page HTML preview: ${bodyHTML.substring(0, 500)}...`);
     
     // Extract listing URLs from search results
     const listingUrls = await page.evaluate(() => {
